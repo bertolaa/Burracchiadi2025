@@ -21,7 +21,7 @@ def save_csv(df, file):
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
 
-if diff <= 99:
+    if 0<= diff <= 99:
         return (500, 500) if score_a > score_b else (500, 500)
     elif 100 <= diff <= 299:
         return (600, 400) if score_a > score_b else (400, 600)
