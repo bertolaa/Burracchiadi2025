@@ -30,12 +30,18 @@ def save_results(results):
 # --- RP Calculation ---
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
-    if diff <= 100:
+    if diff <= 99:
+        return (500, 500) if score_a > score_b else (500, 500)
+    elif 100 <= diff <= 299:
         return (600, 400) if score_a > score_b else (400, 600)
-    elif diff <= 300:
+    elif 300 <= diff <= 499:
         return (700, 300) if score_a > score_b else (300, 700)
-    else:
+    elif 500 <= diff <= 699:
+        return (750, 250) if score_a > score_b else (250, 700)
+    elif 700 <= diff <= 999:
         return (800, 200) if score_a > score_b else (200, 800)
+    else:
+        return (900, 100) if score_a > score_b else (100, 999)
 
 # --- Ranking Calculation ---
 def update_ranking(results):
@@ -65,6 +71,7 @@ def update_ranking(results):
 
     df = pd.DataFrame(ranking_data, columns=["Participant", "Total RP", "Matches Played", "Average RP"])
     df = df.sort_values(by=["Average RP", "Matches Played"], ascending=[False, False]).reset_index(drop=True)
+    df.index = df.index + 1  # Start ranking from 1
     return df
 
 # --- Initialize data ---
@@ -75,7 +82,7 @@ results = load_results()
 st.title("🏆 Burracchiadi 2025")
 
 # --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", ["Manage Participants", "Add / Update Results", "Ranking"])
+menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / Update Results"], index=0)
 
 # --- Manage Participants ---
 if menu == "Manage Participants":
