@@ -139,7 +139,7 @@ elif menu == "Add / Update Results":
 
 # --- Ranking ---
 elif menu == "Ranking":
-    st.header("📊 Ranking")
+    st.header("📊 Classifica")
 
     if not results:
         st.info("No results yet. Rankings will appear here after games are played.")
