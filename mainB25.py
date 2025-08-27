@@ -8,29 +8,20 @@ st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 PARTICIPANTS_FILE = "participants.csv"
 RESULTS_FILE = "results.csv"
 
-# --- Load participants ---
-def load_participants():
-    if os.path.exists(PARTICIPANTS_FILE):
-        return pd.read_csv(PARTICIPANTS_FILE)["Participant"].tolist()
-    return []
+# --- Load & Save CSV Helpers ---
+def load_csv(file, cols):
+    if os.path.exists(file):
+        return pd.read_csv(file)
+    return pd.DataFrame(columns=cols)
 
-def save_participants(participants):
-    pd.DataFrame(participants, columns=["Participant"]).to_csv(PARTICIPANTS_FILE, index=False)
-
-# --- Load results ---
-def load_results():
-    if os.path.exists(RESULTS_FILE):
-        df = pd.read_csv(RESULTS_FILE)
-        return df.to_dict("records")
-    return []
-
-def save_results(results):
-    pd.DataFrame(results).to_csv(RESULTS_FILE, index=False)
+def save_csv(df, file):
+    df.to_csv(file, index=False)
 
 # --- RP Calculation ---
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
-    if diff <= 99:
+
+if diff <= 99:
         return (500, 500) if score_a > score_b else (500, 500)
     elif 100 <= diff <= 299:
         return (600, 400) if score_a > score_b else (400, 600)
@@ -44,9 +35,9 @@ def calculate_rp(score_a, score_b):
         return (900, 100) if score_a > score_b else (100, 999)
 
 # --- Ranking Calculation ---
-def update_ranking(results):
+def update_ranking(results_df):
     ranking = {}
-    for result in results:
+    for _, result in results_df.iterrows():
         team_a = [result["a1"], result["a2"]]
         team_b = [result["b1"], result["b2"]]
         score_a, score_b = result["score_a"], result["score_b"]
@@ -74,9 +65,9 @@ def update_ranking(results):
     df.index = df.index + 1  # Start ranking from 1
     return df
 
-# --- Initialize data ---
-participants = load_participants()
-results = load_results()
+# --- Load Data ---
+participants_df = load_csv(PARTICIPANTS_FILE, ["Participant"])
+results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b"])
 
 # --- Title ---
 st.title("🏆 Burracchiadi 2025")
@@ -88,63 +79,70 @@ menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / 
 if menu == "Manage Participants":
     st.header("👥 Manage Participants")
 
-    with st.form("add_participant_form"):
-        new_participant = st.text_input("Participant Name")
-        submitted = st.form_submit_button("Add Participant")
-        if submitted and new_participant.strip():
-            if new_participant not in participants:
-                participants.append(new_participant)
-                save_participants(participants)
-                st.success(f"Participant {new_participant} added!")
-            else:
-                st.warning("Participant already exists!")
+    edited_participants = st.data_editor(participants_df, num_rows="dynamic", key="participants_editor")
 
-    if participants:
-        st.subheader("Registered Participants")
-        st.write(", ".join(participants))
+    if not edited_participants.equals(participants_df):
+        save_csv(edited_participants, PARTICIPANTS_FILE)
+        participants_df = edited_participants
+        st.success("Participants updated!")
+
+    st.download_button("⬇️ Download Participants CSV", data=participants_df.to_csv(index=False), file_name="participants.csv")
 
 # --- Add / Update Results ---
 elif menu == "Add / Update Results":
-    st.header("🃏 Add / Update Game Results")
+    st.header("🃏 Add / Update Results")
 
-    if len(participants) < 4:
-        st.warning("You need at least 4 participants to add results!")
-    else:
-        with st.form("add_result_form"):
-            col1, col2 = st.columns(2)
-            with col1:
-                team_a = st.multiselect("Select 2 Participants for Team A", participants, key="team_a")
-                score_a = st.number_input("Score Team A", min_value=0, step=10)
-            with col2:
-                team_b = st.multiselect("Select 2 Participants for Team B", participants, key="team_b")
-                score_b = st.number_input("Score Team B", min_value=0, step=10)
+    passcode = st.text_input("Enter Passcode", type="password")
+    if passcode == "Burracchiadi25":
+        participants = participants_df["Participant"].tolist()
 
-            result_submit = st.form_submit_button("Add Result")
-            if result_submit:
-                if len(team_a) != 2 or len(team_b) != 2:
-                    st.error("Each team must have exactly 2 participants!")
-                elif set(team_a) & set(team_b):
-                    st.error("A participant cannot play in both teams!")
-                elif score_a < 2000 and score_b < 2000:
-                    st.error("At least one team must reach 2000 points to win!")
-                else:
-                    result = {"a1": team_a[0], "a2": team_a[1], "b1": team_b[0], "b2": team_b[1], "score_a": score_a, "score_b": score_b}
-                    results.append(result)
-                    save_results(results)
-                    st.success("Result added and saved!")
+        if len(participants) < 4:
+            st.warning("You need at least 4 participants to add results!")
+        else:
+            with st.form("add_result_form"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    team_a = st.multiselect("Select 2 Participants for Team A", participants, key="team_a")
+                    score_a = st.number_input("Score Team A", min_value=0, step=10)
+                with col2:
+                    team_b = st.multiselect("Select 2 Participants for Team B", participants, key="team_b")
+                    score_b = st.number_input("Score Team B", min_value=0, step=10)
 
-    if results:
-        st.subheader("Game History (from file)")
-        st.dataframe(pd.DataFrame(results))
+                result_submit = st.form_submit_button("Add Result")
+                if result_submit:
+                    if len(team_a) != 2 or len(team_b) != 2:
+                        st.error("Each team must have exactly 2 participants!")
+                    elif set(team_a) & set(team_b):
+                        st.error("A participant cannot play in both teams!")
+                    elif score_a < 2000 and score_b < 2000:
+                        st.error("At least one team must reach 2000 points to win!")
+                    else:
+                        new_result = pd.DataFrame([{ "a1": team_a[0], "a2": team_a[1], "b1": team_b[0], "b2": team_b[1], "score_a": score_a, "score_b": score_b }])
+                        results_df = pd.concat([results_df, new_result], ignore_index=True)
+                        save_csv(results_df, RESULTS_FILE)
+                        st.success("Result added and saved!")
+
+        if not results_df.empty:
+            st.subheader("Game History (Editable)")
+            edited_results = st.data_editor(results_df, num_rows="dynamic", key="results_editor")
+
+            if not edited_results.equals(results_df):
+                save_csv(edited_results, RESULTS_FILE)
+                results_df = edited_results
+                st.success("Results updated!")
+
+            st.download_button("⬇️ Download Results CSV", data=results_df.to_csv(index=False), file_name="results.csv")
+    elif passcode:
+        st.error("Incorrect passcode")
 
 # --- Ranking ---
 elif menu == "Ranking":
-    st.header("📊 Classifica")
+    st.header("📊 Ranking")
 
-    if not results:
+    if results_df.empty:
         st.info("No results yet. Rankings will appear here after games are played.")
     else:
-        ranking_df = update_ranking(results)
+        ranking_df = update_ranking(results_df)
 
         # Alternate row coloring
         def highlight_rows(row):
