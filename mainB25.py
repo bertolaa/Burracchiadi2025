@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import openpyxl
 
 st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 
