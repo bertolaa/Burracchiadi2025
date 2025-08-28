@@ -21,8 +21,8 @@ def save_csv(df, file):
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
     
-    if score_a = 0 return (0, 1000)
-    if score_b = 0 return (1000, 0)
+    if (score_a == 0) return (0, 1000)
+    if (score_b == 0) return (1000, 0)
 
     if diff <= 99:
         return (500, 500)
@@ -243,4 +243,5 @@ elif menu == "Ranking":
                 return ["background-color: red; text-align: center" for _ in row]
 
         st.dataframe(ranking_df.style.apply(highlight_rows, axis=1))
+
 
