@@ -151,7 +151,7 @@ elif menu == "Add / Update Results":
                 csv_results = pd.read_csv(uploaded_file)
                 expected_cols = {"a1", "a2", "b1", "b2", "score_a", "score_b"}
                 if expected_cols.issubset(csv_results.columns):
-                    results_df = pd.concat([results_df, csv_results[expected_cols]], ignore_index=True)
+		    results_df = pd.concat([results_df, csv_results[list(expected_cols)]], ignore_index=True)
                     save_csv(results_df, RESULTS_FILE)
                     st.success("Past results have been loaded and saved!")
                 else:
