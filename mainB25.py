@@ -88,6 +88,20 @@ if menu == "Manage Participants":
             else:
                 st.error("Participant already exists")
 
+    st.subheader("Load Participants from CSV")
+    uploaded_file = st.file_uploader("Upload CSV file with participants", type=["csv"])
+    if uploaded_file:
+        try:
+            csv_participants = pd.read_csv(uploaded_file)
+            if "Participant" in csv_participants.columns:
+                participants_df = pd.concat([participants_df, csv_participants[["Participant"]]], ignore_index=True)
+                save_csv(participants_df, PARTICIPANTS_FILE)
+                st.success("Participants loaded and saved!")
+            else:
+                st.error("CSV must have a 'Participant' column")
+        except Exception as e:
+            st.error(f"Error reading CSV file: {e}")
+
     st.subheader("Participants List")
     for idx, row in participants_df.iterrows():
         cols = st.columns([3,1,1])
@@ -149,9 +163,9 @@ elif menu == "Add / Update Results":
         if uploaded_file:
             try:
                 csv_results = pd.read_csv(uploaded_file)
-                expected_cols = {"a1", "a2", "b1", "b2", "score_a", "score_b"}
-                if expected_cols.issubset(csv_results.columns):
-                    results_df = pd.concat([results_df, csv_results[list(expected_cols)]], ignore_index=True)
+                expected_cols = ["a1", "a2", "b1", "b2", "score_a", "score_b"]
+                if all(col in csv_results.columns for col in expected_cols):
+                    results_df = pd.concat([results_df, csv_results[expected_cols]], ignore_index=True)
                     save_csv(results_df, RESULTS_FILE)
                     st.success("Past results have been loaded and saved!")
                 else:
@@ -210,10 +224,10 @@ elif menu == "Ranking":
 
         def highlight_rows(row):
             if row["Partite giocate"] >= 10:
-                return ["background-color: lightgreen; text-align: center" for _ in row]
+                return ["background-color: green; text-align: center" for _ in row]
             elif row["Partite giocate"] >= 5:
-                return ["background-color: khaki; text-align: center" for _ in row]
+                return ["background-color: yellow; text-align: center" for _ in row]
             else:
-                return ["background-color: lightcoral; text-align: center" for _ in row]
+                return ["background-color: red; text-align: center" for _ in row]
 
         st.dataframe(ranking_df.style.apply(highlight_rows, axis=1).format({"Media punteggio": "{:.2f}"}))
