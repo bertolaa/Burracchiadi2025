@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import os
-import openpyxl
 
 st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 
@@ -145,20 +144,20 @@ elif menu == "Add / Update Results":
                     save_csv(results_df, RESULTS_FILE)
                     st.success("Result added and saved!")
 
-        st.subheader("Upload Past Results from Excel")
-        uploaded_file = st.file_uploader("Upload Excel file", type=["xlsx"])
+        st.subheader("Load Past Results from CSV")
+        uploaded_file = st.file_uploader("Upload CSV file with past results", type=["csv"])
         if uploaded_file:
             try:
-                excel_results = pd.read_excel(uploaded_file)
+                csv_results = pd.read_csv(uploaded_file)
                 expected_cols = {"a1", "a2", "b1", "b2", "score_a", "score_b"}
-                if expected_cols.issubset(excel_results.columns):
-                    results_df = pd.concat([results_df, excel_results[expected_cols]], ignore_index=True)
+                if expected_cols.issubset(csv_results.columns):
+                    results_df = pd.concat([results_df, csv_results[expected_cols]], ignore_index=True)
                     save_csv(results_df, RESULTS_FILE)
                     st.success("Past results have been loaded and saved!")
                 else:
-                    st.error(f"Excel file must contain the following columns: {expected_cols}")
+                    st.error(f"CSV file must contain the following columns: {expected_cols}")
             except Exception as e:
-                st.error(f"Error reading Excel file: {e}")
+                st.error(f"Error reading CSV file: {e}")
 
         if not results_df.empty:
             st.subheader("Game History")
@@ -199,12 +198,10 @@ elif menu == "Add / Update Results":
                             del st.session_state["edit_result"]
                             st.success("Result updated!")
                             st.experimental_rerun()
-    elif passcode:
-        st.error("Incorrect passcode")
 
 # --- Ranking ---
 elif menu == "Ranking":
-    st.header("📊 Classifica")
+    st.header("📊 Ranking")
 
     if participants_df.empty:
         st.info("No participants yet.")
