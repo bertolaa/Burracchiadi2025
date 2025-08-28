@@ -236,13 +236,14 @@ elif menu == "Ranking":
 
         def highlight_rows(row):
             if row["Partite giocate"] >= 10:
-                return ["background-color: greenyellow; text-align: center" for _ in row]
+                return ["background-color: yellowgreen; text-align: center" for _ in row]
             elif row["Partite giocate"] >= 5:
                 return ["background-color: lightyellow; text-align: center" for _ in row]
             else:
                 return ["background-color: lightsalmon; text-align: center" for _ in row]
 
         st.dataframe(ranking_df.style.apply(highlight_rows, axis=1))
+
 
 
 
