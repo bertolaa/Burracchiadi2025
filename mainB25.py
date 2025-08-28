@@ -20,12 +20,18 @@ def save_csv(df, file):
 # --- RP Calculation ---
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
-    if diff <= 100:
+    if diff <= 99:
+        return (500, 500)
+    elif diff <= 299:
         return (600, 400) if score_a > score_b else (400, 600)
-    elif diff <= 300:
+    elif diff <= 499:
         return (700, 300) if score_a > score_b else (300, 700)
-    else:
+    elif diff <= 699:
+        return (750, 250) if score_a > score_b else (250, 750)
+    elif diff <= 999:
         return (800, 200) if score_a > score_b else (200, 800)
+    else:
+        return (900, 100) if score_a > score_b else (100, 900)
 
 # --- Ranking Calculation ---
 def update_ranking(results_df):
@@ -55,7 +61,7 @@ def update_ranking(results_df):
 
     df = pd.DataFrame(ranking_data, columns=["Participant", "Total RP", "Matches Played", "Average RP"])
     df = df.sort_values(by=["Average RP", "Matches Played"], ascending=[False, False]).reset_index(drop=True)
-    df.index = df.index + 1  # Start ranking from 1
+    df.index = df.index + 1
     return df
 
 # --- Load Data ---
@@ -66,67 +72,115 @@ results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b
 st.title("🏆 Burracchiadi 2025")
 
 # --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / Update Results"], index=0)
+menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Manage Results"], index=0)
 
 # --- Manage Participants ---
 if menu == "Manage Participants":
     st.header("👥 Manage Participants")
 
-    edited_participants = st.data_editor(participants_df, num_rows="dynamic", key="participants_editor")
+    # Add participant
+    with st.form("add_participant_form"):
+        new_name = st.text_input("Add new participant")
+        add_submit = st.form_submit_button("Add")
+        if add_submit and new_name:
+            if new_name not in participants_df["Participant"].values:
+                participants_df = pd.concat([participants_df, pd.DataFrame({"Participant": [new_name]})], ignore_index=True)
+                save_csv(participants_df, PARTICIPANTS_FILE)
+                st.success(f"Added participant {new_name}")
+            else:
+                st.error("Participant already exists!")
 
-    if not edited_participants.equals(participants_df):
-        save_csv(edited_participants, PARTICIPANTS_FILE)
-        participants_df = edited_participants
-        st.success("Participants updated!")
+    # Display participants
+    st.subheader("Participants List")
+    for idx, row in participants_df.iterrows():
+        col1, col2, col3 = st.columns([4,1,1])
+        col1.write(row["Participant"])
+        if col2.button("Edit", key=f"edit_part_{idx}"):
+            st.session_state["edit_participant"] = idx
+        if col3.button("Delete", key=f"delete_part_{idx}"):
+            participants_df = participants_df.drop(idx).reset_index(drop=True)
+            save_csv(participants_df, PARTICIPANTS_FILE)
+            st.experimental_rerun()
 
-    st.download_button("⬇️ Download Participants CSV", data=participants_df.to_csv(index=False), file_name="participants.csv")
+    # Edit form
+    if "edit_participant" in st.session_state:
+        idx = st.session_state["edit_participant"]
+        with st.form("edit_participant_form"):
+            updated_name = st.text_input("Edit name", value=participants_df.loc[idx, "Participant"])
+            update_submit = st.form_submit_button("Update")
+            if update_submit and updated_name:
+                participants_df.loc[idx, "Participant"] = updated_name
+                save_csv(participants_df, PARTICIPANTS_FILE)
+                del st.session_state["edit_participant"]
+                st.success("Participant updated!")
+                st.experimental_rerun()
 
-# --- Add / Update Results ---
-elif menu == "Add / Update Results":
-    st.header("🃏 Add / Update Results")
+# --- Manage Results ---
+elif menu == "Manage Results":
+    st.header("🃏 Manage Results")
 
-    passcode = st.text_input("Enter Passcode", type="password")
-    if passcode == "Burracchiadi25":
-        participants = participants_df["Participant"].tolist()
+    participants = participants_df["Participant"].tolist()
 
-        if len(participants) < 4:
-            st.warning("You need at least 4 participants to add results!")
-        else:
-            with st.form("add_result_form"):
-                col1, col2 = st.columns(2)
-                with col1:
-                    team_a = st.multiselect("Select 2 Participants for Team A", participants, key="team_a")
-                    score_a = st.number_input("Score Team A", min_value=0, step=10)
-                with col2:
-                    team_b = st.multiselect("Select 2 Participants for Team B", participants, key="team_b")
-                    score_b = st.number_input("Score Team B", min_value=0, step=10)
+    # Add result
+    with st.form("add_result_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            team_a = st.multiselect("Select 2 Participants for Team A", participants, key="team_a")
+            score_a = st.number_input("Score Team A", min_value=0, step=10)
+        with col2:
+            team_b = st.multiselect("Select 2 Participants for Team B", participants, key="team_b")
+            score_b = st.number_input("Score Team B", min_value=0, step=10)
+        submit_result = st.form_submit_button("Add Result")
+        if submit_result:
+            if len(team_a) != 2 or len(team_b) != 2:
+                st.error("Each team must have exactly 2 participants!")
+            elif set(team_a) & set(team_b):
+                st.error("A participant cannot play in both teams!")
+            elif score_a < 2000 and score_b < 2000:
+                st.error("At least one team must reach 2000 points to win!")
+            else:
+                new_result = pd.DataFrame([{ "a1": team_a[0], "a2": team_a[1], "b1": team_b[0], "b2": team_b[1], "score_a": score_a, "score_b": score_b }])
+                results_df = pd.concat([results_df, new_result], ignore_index=True)
+                save_csv(results_df, RESULTS_FILE)
+                st.success("Result added!")
 
-                result_submit = st.form_submit_button("Add Result")
-                if result_submit:
-                    if len(team_a) != 2 or len(team_b) != 2:
-                        st.error("Each team must have exactly 2 participants!")
-                    elif set(team_a) & set(team_b):
-                        st.error("A participant cannot play in both teams!")
-                    elif score_a < 2000 and score_b < 2000:
-                        st.error("At least one team must reach 2000 points to win!")
-                    else:
-                        new_result = pd.DataFrame([{ "a1": team_a[0], "a2": team_a[1], "b1": team_b[0], "b2": team_b[1], "score_a": score_a, "score_b": score_b }])
-                        results_df = pd.concat([results_df, new_result], ignore_index=True)
-                        save_csv(results_df, RESULTS_FILE)
-                        st.success("Result added and saved!")
+    # Display results
+    st.subheader("Results List")
+    for idx, row in results_df.iterrows():
+        col1, col2, col3, col4, col5 = st.columns([6,2,2,1,1])
+        col1.write(f"{row['a1']} & {row['a2']} ({row['score_a']}) vs {row['b1']} & {row['b2']} ({row['score_b']})")
+        if col4.button("Edit", key=f"edit_result_{idx}"):
+            st.session_state["edit_result"] = idx
+        if col5.button("Delete", key=f"delete_result_{idx}"):
+            results_df = results_df.drop(idx).reset_index(drop=True)
+            save_csv(results_df, RESULTS_FILE)
+            st.experimental_rerun()
 
-        if not results_df.empty:
-            st.subheader("Game History (Editable)")
-            edited_results = st.data_editor(results_df, num_rows="dynamic", key="results_editor")
-
-            if not edited_results.equals(results_df):
-                save_csv(edited_results, RESULTS_FILE)
-                results_df = edited_results
-                st.success("Results updated!")
-
-            st.download_button("⬇️ Download Results CSV", data=results_df.to_csv(index=False), file_name="results.csv")
-    elif passcode:
-        st.error("Incorrect passcode")
+    # Edit result form
+    if "edit_result" in st.session_state:
+        idx = st.session_state["edit_result"]
+        with st.form("edit_result_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                team_a = st.multiselect("Edit Team A", participants, default=[results_df.loc[idx,"a1"], results_df.loc[idx,"a2"]])
+                score_a = st.number_input("Edit Score Team A", min_value=0, step=10, value=int(results_df.loc[idx,"score_a"]))
+            with col2:
+                team_b = st.multiselect("Edit Team B", participants, default=[results_df.loc[idx,"b1"], results_df.loc[idx,"b2"]])
+                score_b = st.number_input("Edit Score Team B", min_value=0, step=10, value=int(results_df.loc[idx,"score_b"]))
+            update_submit = st.form_submit_button("Update Result")
+            if update_submit:
+                if len(team_a) != 2 or len(team_b) != 2:
+                    st.error("Each team must have exactly 2 participants!")
+                elif set(team_a) & set(team_b):
+                    st.error("A participant cannot play in both teams!")
+                elif score_a < 2000 and score_b < 2000:
+                    st.error("At least one team must reach 2000 points to win!")
+                else:
+                    results_df.loc[idx] = [team_a[0], team_a[1], team_b[0], team_b[1], score_a, score_b]
+                    save_csv(results_df, RESULTS_FILE)
+                    del st.session_state["edit_result"]
+                    st.success("Result updated!")
+                    st.experimental_rerun()
 
 # --- Ranking ---
 elif menu == "Ranking":
@@ -137,7 +191,6 @@ elif menu == "Ranking":
     else:
         ranking_df = update_ranking(results_df)
 
-        # Alternate row coloring
         def highlight_rows(row):
             return ["background-color: #f2f2f2" if row.name % 2 == 0 else "background-color: white" for _ in row]
 
