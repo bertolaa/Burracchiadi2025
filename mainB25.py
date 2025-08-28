@@ -228,7 +228,7 @@ elif menu == "Add / Update Results":
 
 # --- Ranking Section ---
 elif menu == "Ranking":
-    st.header("📊 Ranking")
+    st.header("📊 Classifica")
     if participants_df.empty:
         st.info("No participants yet.")
     else:
@@ -242,7 +242,8 @@ elif menu == "Ranking":
             else:
                 return ["background-color: lightsalmon; text-align: center" for _ in row]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1))
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1),height= 50)
+
 
 
 
