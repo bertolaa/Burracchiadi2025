@@ -236,3 +236,6 @@ elif menu == "Ranking":
             elif row["Partite giocate"] >= 5:
                 return ["background-color: yellow; text-align: center" for _ in row]
             else:
+                return ["background-color: red; text-align: center" for _ in row]
+
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1))
