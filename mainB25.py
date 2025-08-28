@@ -242,7 +242,8 @@ elif menu == "Ranking":
             else:
                 return ["background-color: lightsalmon; text-align: center" for _ in row]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height=50)
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height=500)
+
 
 
 
