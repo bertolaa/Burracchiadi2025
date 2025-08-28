@@ -70,13 +70,16 @@ results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b
 st.title("🏆 Burracchiadi 2025")
 
 # --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants & Results"], index=0)
+menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / Update Results"], index=0)
 
-# --- Password protection ---
-if menu == "Manage Participants & Results":
-    passcode = st.text_input("Enter Passcode", type="password")
-    if passcode == "Burracchiadi25":
-        # --- Manage Participants ---
+# --- Password Protection ---
+password = st.text_input("Enter Passcode for Management Sections", type="password") if menu != "Ranking" else None
+
+# --- Manage Participants Section ---
+if menu == "Manage Participants":
+    if password != "Burracchiadi25":
+        st.error("Incorrect passcode")
+    else:
         st.header("👥 Manage Participants")
         st.subheader("Add Participant")
         with st.form("add_participant_form"):
@@ -130,7 +133,11 @@ if menu == "Manage Participants & Results":
 
         st.download_button("Download Participants CSV", participants_df.to_csv(index=False), file_name="participants.csv")
 
-        # --- Add / Update Results ---
+# --- Add / Update Results Section ---
+elif menu == "Add / Update Results":
+    if password != "Burracchiadi25":
+        st.error("Incorrect passcode")
+    else:
         st.header("🃏 Add / Update Results")
         st.subheader("Add Result")
         with st.form("add_result_form"):
@@ -141,7 +148,6 @@ if menu == "Manage Participants & Results":
             with col2:
                 team_b = st.multiselect("Select 2 Participants for Team B", participants_df["Participant"].tolist(), key="team_b")
                 score_b = st.number_input("Score Team B", min_value=0, step=10)
-
             result_submit = st.form_submit_button("Add Result")
             if result_submit:
                 if len(team_a) != 2 or len(team_b) != 2:
@@ -173,10 +179,7 @@ if menu == "Manage Participants & Results":
 
         st.download_button("Download Results CSV", results_df.to_csv(index=False), file_name="results.csv")
 
-    elif passcode:
-        st.error("Incorrect passcode")
-
-# --- Ranking ---
+# --- Ranking Section ---
 elif menu == "Ranking":
     st.header("📊 Ranking")
     if participants_df.empty:
