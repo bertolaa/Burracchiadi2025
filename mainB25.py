@@ -72,7 +72,7 @@ st.title("🏆 Burracchiadi 2025")
 # --- Sidebar Navigation ---
 menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / Update Results"], index=0)
 
-# --- Password Protection ---
+# --- Password input for management sections ---
 password = st.text_input("Enter Passcode for Management Sections", type="password") if menu != "Ranking" else None
 
 # --- Manage Participants Section ---
@@ -139,6 +139,8 @@ elif menu == "Add / Update Results":
         st.error("Incorrect passcode")
     else:
         st.header("🃏 Add / Update Results")
+
+        # Add new result
         st.subheader("Add Result")
         with st.form("add_result_form"):
             col1, col2 = st.columns(2)
@@ -162,6 +164,7 @@ elif menu == "Add / Update Results":
                     save_csv(results_df, RESULTS_FILE)
                     st.success("Result added and saved!")
 
+        # Load past results from CSV
         st.subheader("Load Past Results from CSV")
         uploaded_file_results = st.file_uploader("Upload CSV file with past results", type=["csv"])
         if uploaded_file_results:
@@ -171,11 +174,51 @@ elif menu == "Add / Update Results":
                 if all(col in csv_results.columns for col in expected_cols):
                     results_df = pd.concat([results_df, csv_results[expected_cols]], ignore_index=True)
                     save_csv(results_df, RESULTS_FILE)
-                    st.success("Past results have been loaded and saved!")
+                    st.success("Past results loaded and saved!")
                 else:
-                    st.error(f"CSV file must contain the following columns: {expected_cols}")
+                    st.error(f"CSV file must contain the columns: {expected_cols}")
             except Exception as e:
                 st.error(f"Error reading CSV file: {e}")
+
+        # Display past results with edit/delete
+        if not results_df.empty:
+            st.subheader("Past Results")
+            for idx, row in results_df.iterrows():
+                cols = st.columns([2,2,2,2,1,1])
+                cols[0].write(f"{row['a1']} & {row['a2']}")
+                cols[1].write(f"{row['b1']} & {row['b2']}")
+                cols[2].write(row['score_a'])
+                cols[3].write(row['score_b'])
+                if cols[4].button("Edit", key=f"edit_r_{idx}"):
+                    st.session_state["edit_result"] = idx
+                if cols[5].button("Delete", key=f"del_r_{idx}"):
+                    results_df = results_df.drop(idx).reset_index(drop=True)
+                    save_csv(results_df, RESULTS_FILE)
+                    st.experimental_rerun()
+
+            if "edit_result" in st.session_state:
+                idx = st.session_state["edit_result"]
+                st.subheader("Edit Result")
+                with st.form("edit_result_form"):
+                    team_a_edit = st.multiselect("Team A", participants_df["Participant"].tolist(), default=[results_df.at[idx,"a1"], results_df.at[idx,"a2"]])
+                    team_b_edit = st.multiselect("Team B", participants_df["Participant"].tolist(), default=[results_df.at[idx,"b1"], results_df.at[idx,"b2"]])
+                    score_a_edit = st.number_input("Score Team A", value=results_df.at[idx,"score_a"], min_value=0, step=10)
+                    score_b_edit = st.number_input("Score Team B", value=results_df.at[idx,"score_b"], min_value=0, step=10)
+                    save_edit = st.form_submit_button("Save Changes")
+                    if save_edit:
+                        if len(team_a_edit) != 2 or len(team_b_edit) != 2:
+                            st.error("Each team must have exactly 2 participants!")
+                        elif set(team_a_edit) & set(team_b_edit):
+                            st.error("A participant cannot play in both teams!")
+                        else:
+                            results_df.at[idx,"a1"], results_df.at[idx,"a2"] = team_a_edit
+                            results_df.at[idx,"b1"], results_df.at[idx,"b2"] = team_b_edit
+                            results_df.at[idx,"score_a"] = score_a_edit
+                            results_df.at[idx,"score_b"] = score_b_edit
+                            save_csv(results_df, RESULTS_FILE)
+                            del st.session_state["edit_result"]
+                            st.success("Result updated!")
+                            st.experimental_rerun()
 
         st.download_button("Download Results CSV", results_df.to_csv(index=False), file_name="results.csv")
 
@@ -193,6 +236,3 @@ elif menu == "Ranking":
             elif row["Partite giocate"] >= 5:
                 return ["background-color: yellow; text-align: center" for _ in row]
             else:
-                return ["background-color: red; text-align: center" for _ in row]
-
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1).format({"Media punteggio": "{:.2f}"}))
