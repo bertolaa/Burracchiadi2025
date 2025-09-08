@@ -307,6 +307,7 @@ elif menu == "Classifica":
         styled_df = ranking_df.style.apply(highlight_rows, axis=1)
         st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
 
+        st.header("📊 Dettagli")
         # Add expandable details per participant
         for i, row in ranking_df.iterrows():
             participant = row["Partecipante"]
@@ -325,7 +326,7 @@ elif menu == "Classifica":
                 st.pyplot(fig)
 
                 # Match details
-                st.subheader("Dettagli partite")
+                st.subheader("Dettagli partite " + row["Partecipante"])
                 for d in details:
                     st.write(
                         f"Squadra {d['team']} vs {d['opponents'][0]} & {d['opponents'][1]} | "
