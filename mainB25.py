@@ -1,18 +1,15 @@
 import streamlit as st
 import pandas as pd
 import os
+import matplotlib.pyplot as plt
+import base64
+from io import BytesIO
 
 st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 
 # --- File paths ---
 PARTICIPANTS_FILE = "participants.csv"
 RESULTS_FILE = "results.csv"
-#PARTICIPANTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/participants.csv"
-#PARTICIPANTS_FILE = "https://raw.githubusercontent.com/bertolaa/Burracchiadi2025/refs/heads/main/data/participants.csv"
-#RESULTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/raw/refs/heads/main/data/results.csv"
-#RESULTS_FILE = "https://raw.githubusercontent.com/bertolaa/Burracchiadi2025/refs/heads/main/data/results.csv"
-
-
 
 # --- Load & Save CSV Helpers ---
 def load_csv(file, cols):
@@ -39,9 +36,9 @@ def calculate_rp(score_a, score_b):
     else:
         return (900, 100) if score_a > score_b else (100, 900)
 
-# --- Ranking Calculation ---
+# --- Ranking Calculation with bar chart thumbnails ---
 def update_ranking(participants_df, results_df):
-    ranking = {p: {"total_rp": 0, "matches": 0} for p in participants_df["Participant"].tolist()}
+    ranking = {p: {"total_rp": 0, "matches": 0, "scores": []} for p in participants_df["Participant"].tolist()}
 
     for _, result in results_df.iterrows():
         team_a = [result["a1"], result["a2"]]
@@ -53,45 +50,66 @@ def update_ranking(participants_df, results_df):
             if p in ranking:
                 ranking[p]["total_rp"] += rp_a
                 ranking[p]["matches"] += 1
+                ranking[p]["scores"].append(rp_a)
         for p in team_b:
             if p in ranking:
                 ranking[p]["total_rp"] += rp_b
                 ranking[p]["matches"] += 1
+                ranking[p]["scores"].append(rp_b)
+
+    def make_barchart(scores):
+        if not scores:
+            return ""
+        fig, ax = plt.subplots(figsize=(2, 0.5))
+        ax.bar(range(1, len(scores)+1), scores, color="cornflowerblue", edgecolor="black")
+        ax.set_ylim(0, 1000)  # RP max 900
+        ax.axis("off")
+        buf = BytesIO()
+        plt.savefig(buf, format="png", bbox_inches="tight", pad_inches=0)
+        plt.close(fig)
+        img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        return f'<img src="data:image/png;base64,{img_b64}" width="120" height="30">'
 
     ranking_data = []
     for participant, stats in ranking.items():
         avg_rp = stats["total_rp"] / stats["matches"] if stats["matches"] > 0 else 0
-        ranking_data.append([participant, stats["total_rp"], stats["matches"], round(avg_rp, 2)])
+        bar_img = make_barchart(stats["scores"])
+        ranking_data.append([
+            participant,
+            stats["total_rp"],
+            stats["matches"],
+            round(avg_rp, 2),
+            bar_img
+        ])
 
-    df = pd.DataFrame(ranking_data, columns=["Participant", "Total RP", "Partite giocate", "Media punteggio"])
+    df = pd.DataFrame(
+        ranking_data,
+        columns=["Participant", "Total RP", "Partite giocate", "Media punteggio", "Punteggi"]
+    )
     df = df.sort_values(by=["Media punteggio", "Partite giocate"], ascending=[False, False]).reset_index(drop=True)
     df.index = df.index + 1
-    
-    st.dataframe (ranking_data)
-    st.dataframe (df)         
     return df
 
 # --- Load Data ---
 participants_df = load_csv(PARTICIPANTS_FILE, ["Participant"])
 results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b"])
-righe = len(participants_df)
 
 # --- Title ---
 st.title("🏆 Burracchiadi 2025")
 
 # --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", ["Classifica", "Partecipanti", "Aggiorna risultati"], index=0)
+menu = st.sidebar.radio("Navigation", ["Classifica", "Manage Participants", "Add / Update Results"], index=0)
 
 # --- Password input for management sections ---
-password = st.text_input("Enter Passcode for Management Sections", type="password") if menu != "Ranking" else None
+password = st.text_input("Enter Passcode for Management Sections", type="password") if menu != "Classifica" else None
 
 # --- Manage Participants Section ---
-if menu == "Partecipanti":
+if menu == "Manage Participants":
     if password != "Burracchiadi25":
         st.error("Incorrect passcode")
     else:
-        st.header("👥 Gestisci Participanti")
-        st.subheader("Aggiungi")
+        st.header("👥 Manage Participants")
+        st.subheader("Add Participant")
         with st.form("add_participant_form"):
             new_participant = st.text_input("Participant name")
             submit_participant = st.form_submit_button("Add")
@@ -144,21 +162,21 @@ if menu == "Partecipanti":
         st.download_button("Download Participants CSV", participants_df.to_csv(index=False), file_name="participants.csv")
 
 # --- Add / Update Results Section ---
-elif menu == "Aggiorna risultati":
+elif menu == "Add / Update Results":
     if password != "Burracchiadi25":
         st.error("Incorrect passcode")
     else:
-        st.header("🃏 Aggiorna risultati")
+        st.header("🃏 Add / Update Results")
 
         # Add new result
-        st.subheader("Aggiungi risultato")
+        st.subheader("Add Result")
         with st.form("add_result_form"):
             col1, col2 = st.columns(2)
             with col1:
-                team_a = st.multiselect("Scegli 2 partecipanti forper il team A", participants_df["Participant"].tolist(), key="team_a")
+                team_a = st.multiselect("Select 2 Participants for Team A", participants_df["Participant"].tolist(), key="team_a")
                 score_a = st.number_input("Score Team A", min_value=0, step=10)
             with col2:
-                team_b = st.multiselect("Scegli 2 partecipanti forper il team B", participants_df["Participant"].tolist(), key="team_b")
+                team_b = st.multiselect("Select 2 Participants for Team B", participants_df["Participant"].tolist(), key="team_b")
                 score_b = st.number_input("Score Team B", min_value=0, step=10)
             result_submit = st.form_submit_button("Add Result")
             if result_submit:
@@ -175,7 +193,7 @@ elif menu == "Aggiorna risultati":
                     st.success("Result added and saved!")
 
         # Load past results from CSV
-        st.subheader("Carica risultati passati from CSV")
+        st.subheader("Load Past Results from CSV")
         uploaded_file_results = st.file_uploader("Upload CSV file with past results", type=["csv"])
         if uploaded_file_results:
             try:
@@ -212,8 +230,8 @@ elif menu == "Aggiorna risultati":
                 with st.form("edit_result_form"):
                     team_a_edit = st.multiselect("Team A", participants_df["Participant"].tolist(), default=[results_df.at[idx,"a1"], results_df.at[idx,"a2"]])
                     team_b_edit = st.multiselect("Team B", participants_df["Participant"].tolist(), default=[results_df.at[idx,"b1"], results_df.at[idx,"b2"]])
-                    score_a_edit = st.number_input("Score Team A", value=results_df.at[idx,"score_a"], min_value=0, step=10)
-                    score_b_edit = st.number_input("Score Team B", value=results_df.at[idx,"score_b"], min_value=0, step=10)
+                    score_a_edit = st.number_input("Score Team A", value=int(results_df.at[idx,"score_a"]), min_value=0, step=10)
+                    score_b_edit = st.number_input("Score Team B", value=int(results_df.at[idx,"score_b"]), min_value=0, step=10)
                     save_edit = st.form_submit_button("Save Changes")
                     if save_edit:
                         if len(team_a_edit) != 2 or len(team_b_edit) != 2:
@@ -240,13 +258,13 @@ elif menu == "Classifica":
     else:
         ranking_df = update_ranking(participants_df, results_df)
 
+        # evidenzia righe
         def highlight_rows(row):
             if row["Partite giocate"] >= 10:
-                return ["background-color: green; text-align: center" if col == "Participant" else "" for col in row.index]
+                return ["background-color: lightgreen; text-align: center" for _ in row]
             elif row["Partite giocate"] >= 5:
-                return ["background-color: yellow; text-align: center" if col == "Participant" else "" for col in row.index]
+                return ["background-color: khaki; text-align: center" for _ in row]
             else:
-                return ["background-color: red; text-align: center" if col == "Participant" else "" for col in row.index]
+                return ["background-color: lightcoral; text-align: center" for _ in row]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height = 20)
-    
+        st.write(ranking_df.to_html(escape=False), unsafe_allow_html=True)
