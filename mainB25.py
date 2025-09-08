@@ -317,7 +317,7 @@ elif menu == "Classifica":
                 # Line chart of RP progression
                 fig, ax = plt.subplots()
                 ax.plot(range(1, len(scores)+1), scores, marker='o', linestyle='-', color='blue')
-                ax.set_title("Progressione RP")
+                ax.set_title("Progressione punti classifica "+{participant})
                 ax.set_xlabel("Partita #")
                 ax.set_ylabel("RP")
                 ax.grid(True)
