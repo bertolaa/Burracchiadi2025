@@ -267,4 +267,5 @@ elif menu == "Classifica":
             else:
                 return ["background-color: lightcoral; text-align: center" for _ in row]
 
-        st.write(ranking_df.to_html(escape=False), unsafe_allow_html=True)
+        #st.write(ranking_df.to_html(escape=False), unsafe_allow_html=True)
+        st.write(ranking_df.style.apply(highlight_rows, axis=1), height = 20)
