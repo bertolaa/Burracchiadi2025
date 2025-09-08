@@ -66,6 +66,8 @@ def update_ranking(participants_df, results_df):
     df = pd.DataFrame(ranking_data, columns=["Participant", "Total RP", "Partite giocate", "Media punteggio"])
     df = df.sort_values(by=["Media punteggio", "Partite giocate"], ascending=[False, False]).reset_index(drop=True)
     df.index = df.index + 1
+    
+    st.dataframe (ranking_data)
     st.dataframe (df)         
     return df
 
