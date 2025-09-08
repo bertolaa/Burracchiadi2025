@@ -237,8 +237,9 @@ elif menu == "Classifica":
         ranking_df = update_ranking(participants_df, results_df)
 
         def highlight_rows(row):
+            item = row['Participant']   
             if row["Partite giocate"] >= 10:
-                return ["background-color: green; text-align: center" for 1 in row]
+                return ["background-color: green; text-align: center" if col == "Participant"]
             elif row["Partite giocate"] >= 5:
                 return ["background-color: yellow; text-align: center" for _ in row]
             else:
