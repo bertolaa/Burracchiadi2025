@@ -76,18 +76,18 @@ results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b
 st.title("🏆 Burracchiadi 2025")
 
 # --- Sidebar Navigation ---
-menu = st.sidebar.radio("Navigation", ["Ranking", "Manage Participants", "Add / Update Results"], index=0)
+menu = st.sidebar.radio("Navigation", ["Classifica", "Partecipanti", "Aggiorna risultati"], index=0)
 
 # --- Password input for management sections ---
 password = st.text_input("Enter Passcode for Management Sections", type="password") if menu != "Ranking" else None
 
 # --- Manage Participants Section ---
-if menu == "Manage Participants":
+if menu == "Partecipanti":
     if password != "Burracchiadi25":
         st.error("Incorrect passcode")
     else:
-        st.header("👥 Manage Participants")
-        st.subheader("Add Participant")
+        st.header("👥 Gestisci Participanti")
+        st.subheader("Aggiungi")
         with st.form("add_participant_form"):
             new_participant = st.text_input("Participant name")
             submit_participant = st.form_submit_button("Add")
@@ -140,21 +140,21 @@ if menu == "Manage Participants":
         st.download_button("Download Participants CSV", participants_df.to_csv(index=False), file_name="participants.csv")
 
 # --- Add / Update Results Section ---
-elif menu == "Add / Update Results":
+elif menu == "Aggiorna risultati":
     if password != "Burracchiadi25":
         st.error("Incorrect passcode")
     else:
-        st.header("🃏 Add / Update Results")
+        st.header("🃏 Aggiorna risultati")
 
         # Add new result
-        st.subheader("Add Result")
+        st.subheader("Aggiungi risultato")
         with st.form("add_result_form"):
             col1, col2 = st.columns(2)
             with col1:
-                team_a = st.multiselect("Select 2 Participants for Team A", participants_df["Participant"].tolist(), key="team_a")
+                team_a = st.multiselect("Scegli 2 partecipanti forper il team A", participants_df["Participant"].tolist(), key="team_a")
                 score_a = st.number_input("Score Team A", min_value=0, step=10)
             with col2:
-                team_b = st.multiselect("Select 2 Participants for Team B", participants_df["Participant"].tolist(), key="team_b")
+                team_b = st.multiselect("Scegli 2 partecipanti forper il team B", participants_df["Participant"].tolist(), key="team_b")
                 score_b = st.number_input("Score Team B", min_value=0, step=10)
             result_submit = st.form_submit_button("Add Result")
             if result_submit:
@@ -171,7 +171,7 @@ elif menu == "Add / Update Results":
                     st.success("Result added and saved!")
 
         # Load past results from CSV
-        st.subheader("Load Past Results from CSV")
+        st.subheader("Carica risultati passati from CSV")
         uploaded_file_results = st.file_uploader("Upload CSV file with past results", type=["csv"])
         if uploaded_file_results:
             try:
@@ -229,10 +229,10 @@ elif menu == "Add / Update Results":
         st.download_button("Download Results CSV", results_df.to_csv(index=False), file_name="results.csv")
 
 # --- Ranking Section ---
-elif menu == "Ranking":
-    st.header("📊 Ranking")
+elif menu == "Classifica":
+    st.header("📊 Classifica")
     if participants_df.empty:
-        st.info("No participants yet.")
+        st.info("Nessun partecipante")
     else:
         ranking_df = update_ranking(participants_df, results_df)
 
