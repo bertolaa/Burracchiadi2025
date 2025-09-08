@@ -269,7 +269,7 @@ elif menu == "Classifica":
 
         styled_df = ranking_df.style.apply(highlight_rows, axis=1)                
         
-        for i, row in styled_df.iterrows():
+        for i, row in ranking_df.iterrows():
             st.markdown(f"### {i}. {row['Partecipante']}")
             st.write(f"Total RP: {row['Total RP']} | Matches: {row['Partite giocate']} | Avg RP: {row['Media punteggio']}")
             
