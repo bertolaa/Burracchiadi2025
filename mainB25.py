@@ -71,6 +71,7 @@ def update_ranking(participants_df, results_df):
 # --- Load Data ---
 participants_df = load_csv(PARTICIPANTS_FILE, ["Participant"])
 results_df = load_csv(RESULTS_FILE, ["a1", "a2", "b1", "b2", "score_a", "score_b"])
+righe = len(participants_df)
 
 # --- Title ---
 st.title("🏆 Burracchiadi 2025")
@@ -244,4 +245,4 @@ elif menu == "Classifica":
             else:
                 return ["background-color: red; text-align: center" if col == "Participant" else "" for col in row.index]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height=20)
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height = righe)
