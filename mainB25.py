@@ -257,18 +257,6 @@ elif menu == "Classifica":
         st.info("Nessun partecipante")
     else:
         ranking_df = update_ranking(participants_df, results_df)
-
-        # evidenzia righe
-        def highlight_rows(row):
-            if row["Partite giocate"] >= 10:
-                return ["background-color: lightgreen; text-align: center" for _ in row]
-            elif row["Partite giocate"] >= 5:
-                return ["background-color: khaki; text-align: center" for _ in row]
-            else:
-                return ["background-color: lightcoral; text-align: center" for _ in row]
-
-        styled_df = ranking_df.style.apply(highlight_rows, axis=1)                
-        st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
         
         for i, row in ranking_df.iterrows():
             st.markdown(f"### {i}. {row['Partecipante']}")
