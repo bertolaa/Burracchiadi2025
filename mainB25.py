@@ -239,10 +239,10 @@ elif menu == "Classifica":
         def highlight_rows(row):
             item = row['Participant']   
             if row["Partite giocate"] >= 10:
-                return ["background-color: green; text-align: center" if col == "Participant" else "" for col in row.index]
+                return ["background-color: green; text-align: center" if col == "Participant" else ""]
             elif row["Partite giocate"] >= 5:
-                return ["background-color: yellow; text-align: center" for _ in row]
+                return ["background-color: yellow; text-align: center" if col == "Participant" else ""]
             else:
-                return ["background-color: red; text-align: center" for _ in row]
+                return ["background-color: red; text-align: center" if col == "Participant" else ""]
 
         st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height=20)
