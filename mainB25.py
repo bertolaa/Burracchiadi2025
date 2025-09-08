@@ -274,8 +274,8 @@ elif menu == "Classifica":
             st.write(f"Total RP: {row['Total RP']} | Matches: {row['Partite giocate']} | Avg RP: {row['Media punteggio']}")
             
             with st.expander("More"):
-                scores = ranking[row["Partecipante"]]["scores"]
-                details = ranking[row["Partecipante"]]["details"]
+                scores = ranking_df[row["Partecipante"]]["scores"]
+                details = ranking_df[row["Partecipante"]]["details"]
 
                 # Line chart
                 fig, ax = plt.subplots()
