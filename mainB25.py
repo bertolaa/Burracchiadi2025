@@ -7,9 +7,11 @@ st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 # --- File paths ---
 PARTICIPANTS_FILE = "participants.csv"
 RESULTS_FILE = "results.csv"
-PARTICIPANTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/participants.csv"
-PARTICIPANTS_FILE = "https://raw.githubusercontent.com/bertolaa/Burracchiadi2025/refs/heads/main/data/participants.csv"
-RESULTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/results.csv"
+#PARTICIPANTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/participants.csv"
+#PARTICIPANTS_FILE = "https://raw.githubusercontent.com/bertolaa/Burracchiadi2025/refs/heads/main/data/participants.csv"
+#RESULTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/raw/refs/heads/main/data/results.csv"
+#RESULTS_FILE = "https://raw.githubusercontent.com/bertolaa/Burracchiadi2025/refs/heads/main/data/results.csv"
+
 
 
 # --- Load & Save CSV Helpers ---
