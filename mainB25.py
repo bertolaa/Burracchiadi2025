@@ -245,4 +245,4 @@ elif menu == "Classifica":
             else:
                 return ["background-color: red; text-align: center" if col == "Participant" else "" for col in row.index]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height = righe)
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height = 100)
