@@ -257,8 +257,19 @@ elif menu == "Classifica":
         st.info("Nessun partecipante")
     else:
         ranking_df = update_ranking(participants_df, results_df)
+
+        # evidenzia righe
+        def highlight_rows(row):
+            if row["Partite giocate"] >= 10:
+                return ["background-color: lightgreen; text-align: center" for _ in row]
+            elif row["Partite giocate"] >= 5:
+                return ["background-color: khaki; text-align: center" for _ in row]
+            else:
+                return ["background-color: lightcoral; text-align: center" for _ in row]
+
+        styled_df = ranking_df.style.apply(highlight_rows, axis=1)                
         
-        for i, row in ranking_df.iterrows():
+        for i, row in styled_df.iterrows():
             st.markdown(f"### {i}. {row['Partecipante']}")
             st.write(f"Total RP: {row['Total RP']} | Matches: {row['Partite giocate']} | Avg RP: {row['Media punteggio']}")
             
@@ -279,5 +290,7 @@ elif menu == "Classifica":
                 st.subheader("Match Details")
                 for d in details:
                     st.write(f"Team {d['team']} vs {d['opponents'][0]} & {d['opponents'][1]} | Score: {d['score_a']} - {d['score_b']} | RP: {d['rp']}")
+        
+        st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
 
         
