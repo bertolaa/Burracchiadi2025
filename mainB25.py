@@ -66,6 +66,7 @@ def update_ranking(participants_df, results_df):
     df = pd.DataFrame(ranking_data, columns=["Participant", "Total RP", "Partite giocate", "Media punteggio"])
     df = df.sort_values(by=["Media punteggio", "Partite giocate"], ascending=[False, False]).reset_index(drop=True)
     df.index = df.index + 1
+    st.dataframe (df)         
     return df
 
 # --- Load Data ---
@@ -246,5 +247,4 @@ elif menu == "Classifica":
                 return ["background-color: red; text-align: center" if col == "Participant" else "" for col in row.index]
 
         st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height = 20)
-        st.dataframe(ranking_df, height = 20)
-        
+    
