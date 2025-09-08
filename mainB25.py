@@ -269,27 +269,6 @@ elif menu == "Classifica":
 
         styled_df = ranking_df.style.apply(highlight_rows, axis=1)                
         
-        for i, row in ranking_df.iterrows():
-            st.markdown(f"### {i}. {row['Partecipante']}")
-            st.write(f"Total RP: {row['Total RP']} | Matches: {row['Partite giocate']} | Avg RP: {row['Media punteggio']}")
-            
-            with st.expander("More"):
-                scores = ranking_df[row["Partecipante"]]["scores"]
-                details = ranking_df[row["Partecipante"]]["details"]
-
-                # Line chart
-                fig, ax = plt.subplots()
-                ax.plot(range(1, len(scores)+1), scores, marker='o', linestyle='-', color='blue')
-                ax.set_title("RP Progression")
-                ax.set_xlabel("Match #")
-                ax.set_ylabel("RP")
-                ax.grid(True)
-                st.pyplot(fig)
-
-                # Match details
-                st.subheader("Match Details")
-                for d in details:
-                    st.write(f"Team {d['team']} vs {d['opponents'][0]} & {d['opponents'][1]} | Score: {d['score_a']} - {d['score_b']} | RP: {d['rp']}")
         
         st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
 
