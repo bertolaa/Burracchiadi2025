@@ -262,33 +262,32 @@ elif menu == "Classifica":
     else:
         ranking_df = update_ranking(participants_df, results_df)
 
-        # Display each row with a "More" button
-        for i, row in ranking_df.iterrows():
-            participant = row["Partecipante"]
-            stats = {
-                "scores": [],
-                "details": []
-            }
+        # Build detailed RP history and match info
+        detailed_ranking = {
+            p: {"scores": [], "details": []}
+            for p in participants_df["Participant"].tolist()
+        }
 
-            # Collect scores and match details
-            for _, result in results_df.iterrows():
-                team_a = [result["a1"], result["a2"]]
-                team_b = [result["b1"], result["b2"]]
-                score_a, score_b = result["score_a"], result["score_b"]
-                rp_a, rp_b = calculate_rp(score_a, score_b)
+        for _, result in results_df.iterrows():
+            team_a = [result["a1"], result["a2"]]
+            team_b = [result["b1"], result["b2"]]
+            score_a, score_b = result["score_a"], result["score_b"]
+            rp_a, rp_b = calculate_rp(score_a, score_b)
 
-                if participant in team_a:
-                    stats["scores"].append(rp_a)
-                    stats["details"].append({
+            for p in team_a:
+                if p in detailed_ranking:
+                    detailed_ranking[p]["scores"].append(rp_a)
+                    detailed_ranking[p]["details"].append({
                         "team": "A",
                         "opponents": team_b,
                         "score_a": score_a,
                         "score_b": score_b,
                         "rp": rp_a
                     })
-                elif participant in team_b:
-                    stats["scores"].append(rp_b)
-                    stats["details"].append({
+            for p in team_b:
+                if p in detailed_ranking:
+                    detailed_ranking[p]["scores"].append(rp_b)
+                    detailed_ranking[p]["details"].append({
                         "team": "B",
                         "opponents": team_a,
                         "score_a": score_a,
@@ -296,25 +295,38 @@ elif menu == "Classifica":
                         "rp": rp_b
                     })
 
-            # Display row
-            cols = st.columns([4, 2, 2, 2, 1])
-            cols[0].markdown(f"**{participant}**")
-            cols[1].write(row["Total RP"])
-            cols[2].write(row["Partite giocate"])
-            cols[3].write(row["Media punteggio"])
-            if cols[4].button("More", key=f"more_{participant}"):
-                with st.expander(f"Dettagli per {participant}"):
-                    fig, ax = plt.subplots()
-                    ax.plot(range(1, len(stats["scores"]) + 1), stats["scores"], marker='o', linestyle='-', color='blue')
-                    ax.set_title("Progressione RP")
-                    ax.set_xlabel("Partita #")
-                    ax.set_ylabel("RP")
-                    ax.grid(True)
-                    st.pyplot(fig)
+        # Highlight rows
+        def highlight_rows(row):
+            if row["Partite giocate"] >= 10:
+                return ["background-color: lightgreen; text-align: center" for _ in row]
+            elif row["Partite giocate"] >= 5:
+                return ["background-color: khaki; text-align: center" for _ in row]
+            else:
+                return ["background-color: lightcoral; text-align: center" for _ in row]
 
-                    st.subheader("Dettagli partite")
-                    for d in stats["details"]:
-                        st.write(
-                            f"Squadra {d['team']} vs {d['opponents'][0]} & {d['opponents'][1]} | "
-                            f"Punteggio: {d['score_a']} - {d['score_b']} | RP: {d['rp']}"
-                        )
+        styled_df = ranking_df.style.apply(highlight_rows, axis=1)
+        st.write(styled_df.to_html(escape=False), unsafe_allow_html=True)
+
+        # Add expandable details per participant
+        for i, row in ranking_df.iterrows():
+            participant = row["Partecipante"]
+            with st.expander(f"📈 Dettagli per {participant}"):
+                scores = detailed_ranking[participant]["scores"]
+                details = detailed_ranking[participant]["details"]
+
+                # Line chart of RP progression
+                fig, ax = plt.subplots()
+                ax.plot(range(1, len(scores)+1), scores, marker='o', linestyle='-', color='blue')
+                ax.set_title("Progressione RP")
+                ax.set_xlabel("Partita #")
+                ax.set_ylabel("RP")
+                ax.grid(True)
+                st.pyplot(fig)
+
+                # Match details
+                st.subheader("Dettagli partite")
+                for d in details:
+                    st.write(
+                        f"Squadra {d['team']} vs {d['opponents'][0]} & {d['opponents'][1]} | "
+                        f"Punteggio: {d['score_a']} - {d['score_b']} | RP: {d['rp']}"
+                    )
