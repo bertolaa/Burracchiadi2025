@@ -7,6 +7,9 @@ st.set_page_config(page_title="Burracchiadi 2025", layout="wide")
 # --- File paths ---
 PARTICIPANTS_FILE = "participants.csv"
 RESULTS_FILE = "results.csv"
+PARTICIPANTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/participants.csv"
+RESULTS_FILE = "https://github.com/bertolaa/Burracchiadi2025/blob/main/data/results.csv"
+
 
 # --- Load & Save CSV Helpers ---
 def load_csv(file, cols):
@@ -20,10 +23,6 @@ def save_csv(df, file):
 # --- RP Calculation ---
 def calculate_rp(score_a, score_b):
     diff = abs(score_a - score_b)
-    
-    if (score_a == 0): return (0, 1000)
-    if (score_b == 0): return (1000, 0)
-
     if diff <= 99:
         return (500, 500)
     elif diff <= 299:
@@ -228,7 +227,7 @@ elif menu == "Add / Update Results":
 
 # --- Ranking Section ---
 elif menu == "Ranking":
-    st.header("📊 Classifica")
+    st.header("📊 Ranking")
     if participants_df.empty:
         st.info("No participants yet.")
     else:
@@ -236,19 +235,10 @@ elif menu == "Ranking":
 
         def highlight_rows(row):
             if row["Partite giocate"] >= 10:
-                return ["background-color: yellowgreen; text-align: center" for _ in row]
+                return ["background-color: green; text-align: center" for _ in row]
             elif row["Partite giocate"] >= 5:
-                return ["background-color: lightyellow; text-align: center" for _ in row]
+                return ["background-color: yellow; text-align: center" for _ in row]
             else:
-                return ["background-color: lightsalmon; text-align: center" for _ in row]
+                return ["background-color: red; text-align: center" for _ in row]
 
-        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1), height=500)
-
-
-
-
-
-
-
-
-
+        st.dataframe(ranking_df.style.apply(highlight_rows, axis=1))
